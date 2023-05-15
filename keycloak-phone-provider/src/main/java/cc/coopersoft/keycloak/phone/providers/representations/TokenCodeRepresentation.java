@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.security.SecureRandom;
 import java.util.Date;
 
 @Data
@@ -35,9 +36,8 @@ public class TokenCodeRepresentation {
     }
 
     private static String generateTokenCode() {
-//        SecureRandom secureRandom = new SecureRandom();
-//        Integer code = secureRandom.nextInt(999_999);
-        Integer code = 123;
+        SecureRandom secureRandom = new SecureRandom();
+        Integer code = secureRandom.nextInt(999_999);
         return String.format("%06d", code);
     }
 }

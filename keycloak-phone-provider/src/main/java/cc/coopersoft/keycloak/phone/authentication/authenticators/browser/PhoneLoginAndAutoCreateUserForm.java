@@ -1,5 +1,6 @@
 package cc.coopersoft.keycloak.phone.authentication.authenticators.browser;
 
+import cc.coopersoft.keycloak.phone.CountryCodes;
 import cc.coopersoft.keycloak.phone.Utils;
 import cc.coopersoft.keycloak.phone.providers.exception.PhoneNumberInvalidException;
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -29,7 +30,6 @@ import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
 
 public class PhoneLoginAndAutoCreateUserForm extends UsernamePasswordForm {
 
-    private static final String MOVITEL_DIALING_CODE = "258";
     private UsernameForm usernameForm = new UsernameForm();
 
     @Override
@@ -64,9 +64,9 @@ public class PhoneLoginAndAutoCreateUserForm extends UsernamePasswordForm {
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return null;
         }
-        username = standardizePhoneNumber(username);
         try {
             Utils.canonicalizePhoneNumber(context.getSession(), username);
+            username = standardizePhoneNumber(context.getSession(), username);
         } catch (PhoneNumberInvalidException e) {
             context.getEvent().error(Errors.INVALID_INPUT);
             Response challengeResponse = challenge(context, e.getErrorType().message(), FIELD_USERNAME);
@@ -79,7 +79,6 @@ public class PhoneLoginAndAutoCreateUserForm extends UsernamePasswordForm {
         UserModel user = null;
         try {
             user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
-
         } catch (ModelDuplicateException mde) {
             ServicesLogger.LOGGER.modelDuplicateException(mde);
 
@@ -105,12 +104,13 @@ public class PhoneLoginAndAutoCreateUserForm extends UsernamePasswordForm {
         return user;
     }
 
-    public String standardizePhoneNumber(String phoneNumber) {
+    public String standardizePhoneNumber(KeycloakSession session, String phoneNumber) {
         phoneNumber = phoneNumber.trim();
-        if (phoneNumber.startsWith(MOVITEL_DIALING_CODE)) {
-            return "+" + phoneNumber;
+        String defaultCountryCode = CountryCodes.getCode(Utils.defaultRegion(session));
+        if (phoneNumber.startsWith(defaultCountryCode)) {
+            return phoneNumber;
         } else {
-            return "+" + MOVITEL_DIALING_CODE + phoneNumber.substring(1);
+            return defaultCountryCode + phoneNumber;
         }
     }
 
