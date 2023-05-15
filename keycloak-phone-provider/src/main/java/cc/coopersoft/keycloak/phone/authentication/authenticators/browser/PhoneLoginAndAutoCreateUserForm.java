@@ -27,9 +27,9 @@ import java.util.Arrays;
 
 import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
 
-public class PhoneForm extends UsernamePasswordForm {
-    private static final String MOVITEL_DIALING_CODE = "258";
+public class PhoneLoginAndAutoCreateUserForm extends UsernamePasswordForm {
 
+    private static final String MOVITEL_DIALING_CODE = "258";
     private UsernameForm usernameForm = new UsernameForm();
 
     @Override

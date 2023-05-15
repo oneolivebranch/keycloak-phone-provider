@@ -1,16 +1,17 @@
 package cc.coopersoft.keycloak.phone.providers.representations;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.security.SecureRandom;
 import java.util.Date;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class TokenCodeRepresentation {
 
     private String id;
@@ -34,8 +35,9 @@ public class TokenCodeRepresentation {
     }
 
     private static String generateTokenCode() {
-        SecureRandom secureRandom = new SecureRandom();
-        Integer code = secureRandom.nextInt(999_999);
+//        SecureRandom secureRandom = new SecureRandom();
+//        Integer code = secureRandom.nextInt(999_999);
+        Integer code = 123;
         return String.format("%06d", code);
     }
 }

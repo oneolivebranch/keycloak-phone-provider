@@ -11,10 +11,10 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
 
-public class PhoneFormFactory implements AuthenticatorFactory {
+public class PhoneLoginAndAutoCreateUserFormFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "auth-phone-form";
-    public static final PhoneForm SINGLETON = new PhoneForm();
+    public static final PhoneLoginAndAutoCreateUserForm SINGLETON = new PhoneLoginAndAutoCreateUserForm();
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED
     };
@@ -61,12 +61,12 @@ public class PhoneFormFactory implements AuthenticatorFactory {
 
     @Override
     public String getDisplayType() {
-        return "Phone Form";
+        return "Phone Login And Auto Create User Form";
     }
 
     @Override
     public String getHelpText() {
-        return "Selects a user from his username.";
+        return null;
     }
 
     @Override
