@@ -49,7 +49,7 @@ public class DefaultPhoneProvider implements PhoneProvider {
                     this.service + "' will be used. You can use keycloak start param '--spi-phone-default-service' to specify a different one. ");
 
         this.tokenExpiresIn = config.getInt("tokenExpiresIn", 60);
-        this.targetHourMaximum = config.getInt("targetHourMaximum", 60);
+        this.targetHourMaximum = config.getInt("targetHourMaximum", 20);
         this.sourceHourMaximum = config.getInt("sourceHourMaximum", 10);
     }
 
@@ -130,8 +130,6 @@ public class DefaultPhoneProvider implements PhoneProvider {
         }
 
         TokenCodeRepresentation token = TokenCodeRepresentation.forPhoneNumber(phoneNumber);
-
-        getTokenCodeService().persistCode(token, type, tokenExpiresIn);
 
         try {
             session.getProvider(MessageSenderService.class, service).sendSmsMessage(type, phoneNumber, token.getCode(), tokenExpiresIn, kind);
