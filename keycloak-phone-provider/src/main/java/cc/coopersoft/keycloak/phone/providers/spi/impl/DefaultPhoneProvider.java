@@ -10,11 +10,14 @@ import cc.coopersoft.keycloak.phone.providers.spi.PhoneVerificationCodeProvider;
 import org.jboss.logging.Logger;
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.ServiceUnavailableException;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Optional;
 
 public class DefaultPhoneProvider implements PhoneProvider {
@@ -130,7 +133,8 @@ public class DefaultPhoneProvider implements PhoneProvider {
         }
 
         TokenCodeRepresentation token = TokenCodeRepresentation.forPhoneNumber(phoneNumber);
-
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, session.getContext().getRealm(), phoneNumber);
+        user.setAttribute("latest-otp", Collections.singletonList(token.getCode()));
         try {
             session.getProvider(MessageSenderService.class, service).sendSmsMessage(type, phoneNumber, token.getCode(), tokenExpiresIn, kind);
             getTokenCodeService().persistCode(token, type, tokenExpiresIn);
