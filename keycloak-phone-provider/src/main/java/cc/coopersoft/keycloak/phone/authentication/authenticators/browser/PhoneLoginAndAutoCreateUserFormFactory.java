@@ -13,7 +13,7 @@ import java.util.List;
 
 public class PhoneLoginAndAutoCreateUserFormFactory implements AuthenticatorFactory {
 
-    public static final String PROVIDER_ID = "auth-phone-form";
+    public static final String PROVIDER_ID = "auth-login-vs-auto-create-form";
     public static final PhoneLoginAndAutoCreateUserForm SINGLETON = new PhoneLoginAndAutoCreateUserForm();
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED

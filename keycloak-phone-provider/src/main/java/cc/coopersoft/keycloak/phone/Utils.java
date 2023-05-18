@@ -80,7 +80,6 @@ public class Utils {
 
     public static String defaultRegion(KeycloakSession session) {
         var defaultRegion = session.getProvider(PhoneProvider.class).defaultPhoneRegion();
-        System.out.println("defaultRegion " + defaultRegion);
         return defaultRegion.orElseGet(() -> localeToCountry(session.getContext().getRealm().getDefaultLocale()).orElse(null));
     }
 
@@ -135,6 +134,18 @@ public class Utils {
 
     public static int getOtpExpires(KeycloakSession session) {
         return session.getProvider(PhoneProvider.class).otpExpires();
+    }
+
+    public static String standardizePhoneNumber(KeycloakSession session, String phoneNumber) {
+        phoneNumber = phoneNumber.trim();
+        String defaultCountryCode = CountryCodes.getCode(Utils.defaultRegion(session));
+        if (phoneNumber.startsWith("0")) {
+            return defaultCountryCode + phoneNumber.substring(1);
+        } else if (phoneNumber.startsWith(defaultCountryCode)) {
+            return phoneNumber;
+        } else {
+            return defaultCountryCode + phoneNumber;
+        }
     }
 
 }
