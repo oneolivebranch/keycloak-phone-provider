@@ -1,12 +1,12 @@
 package cc.coopersoft.keycloak.phone.providers.spi.impl;
 
 import cc.coopersoft.common.OptionalUtils;
-import cc.coopersoft.keycloak.phone.providers.spi.PhoneProvider;
-import cc.coopersoft.keycloak.phone.providers.spi.PhoneVerificationCodeProvider;
 import cc.coopersoft.keycloak.phone.providers.constants.TokenCodeType;
 import cc.coopersoft.keycloak.phone.providers.exception.MessageSendException;
 import cc.coopersoft.keycloak.phone.providers.representations.TokenCodeRepresentation;
 import cc.coopersoft.keycloak.phone.providers.spi.MessageSenderService;
+import cc.coopersoft.keycloak.phone.providers.spi.PhoneProvider;
+import cc.coopersoft.keycloak.phone.providers.spi.PhoneVerificationCodeProvider;
 import org.jboss.logging.Logger;
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
@@ -40,16 +40,16 @@ public class DefaultPhoneProvider implements PhoneProvider {
                                 .stream().findFirst().orElse(null)
                 );
 
-        if (Validation.isBlank(this.service)){
+        if (Validation.isBlank(this.service)) {
             logger.error("Message sender service provider not found!");
         }
 
         if (Validation.isBlank(config.get("service")))
             logger.warn("No message sender service provider specified! Default provider'" +
-                this.service + "' will be used. You can use keycloak start param '--spi-phone-default-service' to specify a different one. ");
+                    this.service + "' will be used. You can use keycloak start param '--spi-phone-default-service' to specify a different one. ");
 
         this.tokenExpiresIn = config.getInt("tokenExpiresIn", 60);
-        this.targetHourMaximum = config.getInt("targetHourMaximum",3);
+        this.targetHourMaximum = config.getInt("targetHourMaximum", 3);
         this.sourceHourMaximum = config.getInt("sourceHourMaximum", 10);
     }
 
@@ -62,19 +62,19 @@ public class DefaultPhoneProvider implements PhoneProvider {
         return session.getProvider(PhoneVerificationCodeProvider.class);
     }
 
-    private String getRealmName(){
+    private String getRealmName() {
         return session.getContext().getRealm().getName();
     }
 
-    private Optional<String> getStringConfigValue(String configName){
+    private Optional<String> getStringConfigValue(String configName) {
         return OptionalUtils.ofBlank(OptionalUtils.ofBlank(config.get(getRealmName() + "-" + configName))
-            .orElse(config.get(configName)));
+                .orElse(config.get(configName)));
     }
 
-    private boolean getBooleanConfigValue(String configName, boolean defaultValue){
-        Boolean result = config.getBoolean(getRealmName() + "-" + configName,null);
+    private boolean getBooleanConfigValue(String configName, boolean defaultValue) {
+        Boolean result = config.getBoolean(getRealmName() + "-" + configName, null);
         if (result == null) {
-            result = config.getBoolean(configName,defaultValue);
+            result = config.getBoolean(configName, defaultValue);
         }
         return result;
     }
@@ -115,27 +115,25 @@ public class DefaultPhoneProvider implements PhoneProvider {
     }
 
     @Override
-    public int sendTokenCode(String phoneNumber,String sourceAddr,TokenCodeType type, String kind){
+    public int sendTokenCode(String phoneNumber, String sourceAddr, TokenCodeType type, String kind) {
 
-        logger.info("send code to:" + phoneNumber );
+        logger.info("send code to:" + phoneNumber);
 
-        if (getTokenCodeService().isAbusing(phoneNumber, type,sourceAddr, sourceHourMaximum, targetHourMaximum)) {
+        if (getTokenCodeService().isAbusing(phoneNumber, type, sourceAddr, sourceHourMaximum, targetHourMaximum)) {
             throw new ForbiddenException("You requested the maximum number of messages the last hour");
         }
 
         TokenCodeRepresentation ongoing = getTokenCodeService().ongoingProcess(phoneNumber, type);
         if (ongoing != null) {
-            logger.info(String.format("No need of sending a new %s code for %s",type.label, phoneNumber));
+            logger.info(String.format("No need of sending a new %s code for %s", type.label, phoneNumber));
             return (int) (ongoing.getExpiresAt().getTime() - Instant.now().toEpochMilli()) / 1000;
         }
-
         TokenCodeRepresentation token = TokenCodeRepresentation.forPhoneNumber(phoneNumber);
-
         try {
-            session.getProvider(MessageSenderService.class, service).sendSmsMessage(type,phoneNumber,token.getCode(),tokenExpiresIn,kind);
+            session.getProvider(MessageSenderService.class, service).sendSmsMessage(type, phoneNumber, token.getCode(), tokenExpiresIn, kind);
             getTokenCodeService().persistCode(token, type, tokenExpiresIn);
 
-            logger.info(String.format("Sent %s code to %s over %s",type.label, phoneNumber, service));
+            logger.info(String.format("Sent %s code to %s over %s", type.label, phoneNumber, service));
 
         } catch (MessageSendException e) {
 
