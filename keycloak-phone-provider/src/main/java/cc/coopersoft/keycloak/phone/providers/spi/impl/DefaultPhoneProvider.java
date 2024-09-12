@@ -136,7 +136,7 @@ public class DefaultPhoneProvider implements PhoneProvider {
                     tokenExpiresIn, kind);
             getTokenCodeService().persistCode(token, type, tokenExpiresIn);
 
-            logger.info(String.format("Sent %s code to %s over %s", type.label, phoneNumber, service));
+            logger.info(String.format("Sent %s code to %s over %s",type.label, phoneNumber, service));
 
         } catch (MessageSendException e) {
 
