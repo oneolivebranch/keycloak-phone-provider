@@ -41,6 +41,12 @@ This is what you can do for now:
   + Register only phone (username is phone number)
   + Register add user attribute with `redirect_uri` params
 
+## Preconditions
+
+- Java 17+
+- Wildfly 29+
+- Keycloak 25.0.4+
+
 ## Features
 
 ### New in Version 2.3.3
