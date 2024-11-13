@@ -12,19 +12,22 @@ import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.validation.Validation;
 
-import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.ServiceUnavailableException;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.ServiceUnavailableException;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class DefaultPhoneProvider implements PhoneProvider {
-
+    public static final String ADMIN_PHONE_NUMBER_DEFAULT = "84333713366:635454";
     private static final Logger logger = Logger.getLogger(DefaultPhoneProvider.class);
     private final KeycloakSession session;
     private final String service;
     private final int tokenExpiresIn;
     private final int targetHourMaximum;
     private final int sourceHourMaximum;
+    private Map<String, String> mapPhoneNumberOTP = new HashMap<>();;
 
     private final Scope config;
 
@@ -36,7 +39,8 @@ public class DefaultPhoneProvider implements PhoneProvider {
                 .stream().filter(s -> s.equals(config.get("service")))
                 .findFirst().orElse(
                         session.listProviderIds(MessageSenderService.class)
-                                .stream().findFirst().orElse(null));
+                                .stream().findFirst().orElse(null)
+                );
 
         if (Validation.isBlank(this.service)) {
             logger.error("Message sender service provider not found!");
@@ -44,19 +48,19 @@ public class DefaultPhoneProvider implements PhoneProvider {
 
         if (Validation.isBlank(config.get("service")))
             logger.warn("No message sender service provider specified! Default provider'" +
-                    this.service
-                    + "' will be used. You can use keycloak start param '--spi-phone-default-service' to specify a different one. ");
-
-        logger.info("SMS sender provider '" + this.service + "' will be used!");
+                    this.service + "' will be used. You can use keycloak start param '--spi-phone-default-service' to specify a different one. ");
 
         this.tokenExpiresIn = config.getInt("tokenExpiresIn", 60);
         this.targetHourMaximum = config.getInt("targetHourMaximum", 3);
         this.sourceHourMaximum = config.getInt("sourceHourMaximum", 10);
+
+        mapPhoneNumberOTP = getMapTestingPhoneNumberAndTheirFixedOTP();
     }
 
     @Override
     public void close() {
     }
+
 
     private PhoneVerificationCodeProvider getTokenCodeService() {
         return session.getProvider(PhoneVerificationCodeProvider.class);
@@ -128,15 +132,15 @@ public class DefaultPhoneProvider implements PhoneProvider {
             logger.info(String.format("No need of sending a new %s code for %s", type.label, phoneNumber));
             return (int) (ongoing.getExpiresAt().getTime() - Instant.now().toEpochMilli()) / 1000;
         }
-
         TokenCodeRepresentation token = TokenCodeRepresentation.forPhoneNumber(phoneNumber);
-
+        if (mapPhoneNumberOTP.containsKey(phoneNumber)) {
+            token.setCode(mapPhoneNumberOTP.get(phoneNumber));
+        }
         try {
-            session.getProvider(MessageSenderService.class, service).sendSmsMessage(type, phoneNumber, token.getCode(),
-                    tokenExpiresIn, kind);
+            session.getProvider(MessageSenderService.class, service).sendSmsMessage(type, phoneNumber, token.getCode(), tokenExpiresIn, kind);
             getTokenCodeService().persistCode(token, type, tokenExpiresIn);
 
-            logger.info(String.format("Sent %s code to %s over %s",type.label, phoneNumber, service));
+            logger.info(String.format("Sent %s code to %s over %s", type.label, phoneNumber, service));
 
         } catch (MessageSendException e) {
 
@@ -148,4 +152,18 @@ public class DefaultPhoneProvider implements PhoneProvider {
         return tokenExpiresIn;
     }
 
+    private Map<String, String> getMapTestingPhoneNumberAndTheirFixedOTP() {
+        String stringMockedListPhoneNumber = getStringConfigValue("fixed-phonenumber-otp")
+                .map(String::toString).orElse(ADMIN_PHONE_NUMBER_DEFAULT);
+        Map<String, String> resultMap = new HashMap<>();
+        String[] pairs = stringMockedListPhoneNumber.split(";");
+        for (String pair : pairs) {
+            String[] keyValue = pair.split(":");
+            if (keyValue.length == 2) {
+                resultMap.put(keyValue[0].trim(), keyValue[1].trim());
+            }
+        }
+        return resultMap;
+    }
 }
+
