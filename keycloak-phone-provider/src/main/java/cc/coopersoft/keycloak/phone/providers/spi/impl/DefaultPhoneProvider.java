@@ -1,12 +1,12 @@
 package cc.coopersoft.keycloak.phone.providers.spi.impl;
 
 import cc.coopersoft.common.OptionalUtils;
+import cc.coopersoft.keycloak.phone.providers.spi.PhoneProvider;
+import cc.coopersoft.keycloak.phone.providers.spi.PhoneVerificationCodeProvider;
 import cc.coopersoft.keycloak.phone.providers.constants.TokenCodeType;
 import cc.coopersoft.keycloak.phone.providers.exception.MessageSendException;
 import cc.coopersoft.keycloak.phone.providers.representations.TokenCodeRepresentation;
 import cc.coopersoft.keycloak.phone.providers.spi.MessageSenderService;
-import cc.coopersoft.keycloak.phone.providers.spi.PhoneProvider;
-import cc.coopersoft.keycloak.phone.providers.spi.PhoneVerificationCodeProvider;
 import org.jboss.logging.Logger;
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
@@ -15,23 +15,25 @@ import org.keycloak.services.validation.Validation;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.ServiceUnavailableException;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class DefaultPhoneProvider implements PhoneProvider {
-
+    public static final String ADMIN_PHONE_NUMBER_DEFAULT = "84333713366:635454";
     private static final Logger logger = Logger.getLogger(DefaultPhoneProvider.class);
     private final KeycloakSession session;
     private final String service;
     private final int tokenExpiresIn;
     private final int targetHourMaximum;
     private final int sourceHourMaximum;
+    private Map<String, String> mapPhoneNumberOTP = new HashMap<>();;
 
     private final Scope config;
 
     DefaultPhoneProvider(KeycloakSession session, Scope config) {
         this.session = session;
         this.config = config;
-
 
         this.service = session.listProviderIds(MessageSenderService.class)
                 .stream().filter(s -> s.equals(config.get("service")))
@@ -51,6 +53,8 @@ public class DefaultPhoneProvider implements PhoneProvider {
         this.tokenExpiresIn = config.getInt("tokenExpiresIn", 60);
         this.targetHourMaximum = config.getInt("targetHourMaximum", 3);
         this.sourceHourMaximum = config.getInt("sourceHourMaximum", 10);
+
+        mapPhoneNumberOTP = getMapTestingPhoneNumberAndTheirFixedOTP();
     }
 
     @Override
@@ -129,6 +133,9 @@ public class DefaultPhoneProvider implements PhoneProvider {
             return (int) (ongoing.getExpiresAt().getTime() - Instant.now().toEpochMilli()) / 1000;
         }
         TokenCodeRepresentation token = TokenCodeRepresentation.forPhoneNumber(phoneNumber);
+        if (mapPhoneNumberOTP.containsKey(phoneNumber)) {
+            token.setCode(mapPhoneNumberOTP.get(phoneNumber));
+        }
         try {
             session.getProvider(MessageSenderService.class, service).sendSmsMessage(type, phoneNumber, token.getCode(), tokenExpiresIn, kind);
             getTokenCodeService().persistCode(token, type, tokenExpiresIn);
@@ -145,4 +152,17 @@ public class DefaultPhoneProvider implements PhoneProvider {
         return tokenExpiresIn;
     }
 
+    private Map<String, String> getMapTestingPhoneNumberAndTheirFixedOTP() {
+        String stringMockedListPhoneNumber = getStringConfigValue("fixed-phonenumber-otp")
+                .map(String::toString).orElse(ADMIN_PHONE_NUMBER_DEFAULT);
+        Map<String, String> resultMap = new HashMap<>();
+        String[] pairs = stringMockedListPhoneNumber.split(";");
+        for (String pair : pairs) {
+            String[] keyValue = pair.split(":");
+            if (keyValue.length == 2) {
+                resultMap.put(keyValue[0].trim(), keyValue[1].trim());
+            }
+        }
+        return resultMap;
+    }
 }
