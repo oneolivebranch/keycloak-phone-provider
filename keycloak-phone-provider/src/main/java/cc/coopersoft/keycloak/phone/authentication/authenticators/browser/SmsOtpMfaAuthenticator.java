@@ -15,6 +15,7 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.CredentialValidator;
 import org.keycloak.credential.CredentialProvider;
+import org.keycloak.events.EventType;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.*;
 import org.keycloak.services.validation.Validation;
@@ -185,6 +186,7 @@ public class SmsOtpMfaAuthenticator implements Authenticator, CredentialValidato
       return;
     }
     setCookie(context, credentialId, secret);
+    context.getEvent().event(EventType.REGISTER).user(context.getUser()).success();
     context.success();
   }
 

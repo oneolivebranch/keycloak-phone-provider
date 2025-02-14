@@ -15,7 +15,6 @@ import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -79,8 +78,6 @@ public class PhoneLoginAndAutoCreateUserForm extends UsernamePasswordForm {
         user.setAttribute("phoneNumber", Collections.singletonList(username));
 
         createCredential(context, username, user);
-
-        context.getEvent().event(EventType.REGISTER).user(user).success();
     }
 
     private void createCredential(AuthenticationFlowContext context, String username, UserModel user) {
