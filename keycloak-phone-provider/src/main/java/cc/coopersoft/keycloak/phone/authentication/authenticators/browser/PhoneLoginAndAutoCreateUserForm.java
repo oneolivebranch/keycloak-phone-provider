@@ -27,6 +27,7 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.ValidationException;
 
 import java.net.URI;
 import java.util.Collections;
@@ -60,19 +61,26 @@ public class PhoneLoginAndAutoCreateUserForm extends UsernamePasswordForm {
         return new PhoneUsernamePasswordForm().validateUser(context, formData);
     }
 
-    private UserModel createUserModel(MultivaluedMap<String, String> inputData, AuthenticationFlowContext context) {
+    private void createUserModel(MultivaluedMap<String, String> inputData, AuthenticationFlowContext context) {
         String username = Utils.standardizePhoneNumber(context.getSession(), inputData.getFirst(Details.USERNAME));
         UserModel user;
         inputData.put(Details.USERNAME, Collections.singletonList(username));
-        UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
-        UserProfile profile = profileProvider.create(UserProfileContext.REGISTRATION, inputData);
-        user = profile.create();
+
+        try {
+            UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
+            UserProfile profile = profileProvider.create(UserProfileContext.REGISTRATION, inputData);
+            user = profile.create();
+        } catch (ValidationException e) {
+            // Manual create user
+            user = context.getSession().users().addUser(context.getRealm(), username);
+        }
+
         user.setEnabled(true);
         user.setAttribute("phoneNumber", Collections.singletonList(username));
+
         createCredential(context, username, user);
 
         context.getEvent().event(EventType.REGISTER).user(user).success();
-        return user;
     }
 
     private void createCredential(AuthenticationFlowContext context, String username, UserModel user) {
